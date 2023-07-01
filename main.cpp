@@ -12,15 +12,32 @@ using namespace std;
 // TapTempo class //
 ////////////////////
 class TapTempo {
+  uint32_t counter;
+  uint32_t last_press;
 
 public:
   void Init() { printf("[taptempo] inited\n"); }
 
   // TapTempo state machine
   void Update(bool &button_press) {
+    counter++;
     if (button_press) {
-      printf("[taptempo] pressed\n");
+      double time_since_last_press =
+          ((double)(counter - last_press) * MAIN_LOOP_DELAY / 1e6);
+      if (time_since_last_press > 3) {
+        printf("[taptempo] reset!\n");
+        printf("[taptempo] time_since_last_press: %2.1f",
+               time_since_last_press);
+      } else {
+        double bpm = 60.0 / time_since_last_press;
+        printf("[taptempo] pressed: %d, last_press: %d, bpm: %2.1f\n", counter,
+               last_press, bpm);
+        // TODO: call function to set device bpm
+      }
+      // depress button
       button_press = false;
+      // set last press time
+      last_press = counter;
     }
   }
 };
