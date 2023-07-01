@@ -5,7 +5,7 @@
 #include <thread>
 #include <unistd.h>
 
-#define MAIN_LOOP_DELAY 50 // microseconds
+#define MAIN_LOOP_DELAY 10000 // microseconds
 using namespace std;
 
 ////////////////////
