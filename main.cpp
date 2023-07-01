@@ -12,6 +12,8 @@ using namespace std;
 // TapTempo class //
 ////////////////////
 class TapTempo {
+  uint8_t bpm_index;
+  double bpms[10];
   uint32_t counter;
   uint32_t last_press;
 
@@ -28,10 +30,30 @@ public:
         printf("[taptempo] reset!\n");
         printf("[taptempo] time_since_last_press: %2.1f",
                time_since_last_press);
+        for (uint8_t i = 0; i < 10; i++) {
+          bpms[i] = 0;
+        }
       } else {
         double bpm = 60.0 / time_since_last_press;
-        printf("[taptempo] pressed: %d, last_press: %d, bpm: %2.1f\n", counter,
-               last_press, bpm);
+        bpms[bpm_index] = bpm;
+        bpm_index++;
+        if (bpm_index == 10) {
+          bpm_index = 0;
+        }
+        // average all non-zero bpms
+        double total_bpm = 0;
+        double total_counter = 0;
+        for (uint8_t i = 0; i < 10; i++) {
+          if (bpms[i] > 0) {
+            total_bpm += bpms[i];
+            total_counter++;
+          }
+        }
+        double bpm_average = total_bpm / total_counter;
+
+        printf("[taptempo] pressed: %d, last_press: %d, bpm: %2.1f, "
+               "bpm_average: %2.1f\n",
+               counter, last_press, bpm, bpm_average);
         // TODO: call function to set device bpm
       }
       // depress button
