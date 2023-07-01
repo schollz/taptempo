@@ -5,7 +5,9 @@
 #include <thread>
 #include <unistd.h>
 
-#define MAIN_LOOP_DELAY 25000 // microseconds
+#define MAIN_LOOP_DELAY 30000 // microseconds
+#define TAP_TEMPO_AVERAGES 10
+#define TAP_TEMPO_RESET_TIME 2
 using namespace std;
 
 ////////////////////
@@ -13,9 +15,10 @@ using namespace std;
 ////////////////////
 class TapTempo {
   uint8_t bpm_index;
-  double bpms[10];
+  double bpms[TAP_TEMPO_AVERAGES];
   uint32_t counter;
   uint32_t last_press;
+  const double weights[10] = {1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1};
 
 public:
   void Init() { printf("[taptempo] inited\n"); }
@@ -26,27 +29,31 @@ public:
     if (button_press) {
       double time_since_last_press =
           ((double)(counter - last_press) * MAIN_LOOP_DELAY / 1e6);
-      if (time_since_last_press > 3) {
+      if (time_since_last_press > TAP_TEMPO_RESET_TIME) {
         printf("[taptempo] reset!\n");
         printf("[taptempo] time_since_last_press: %2.1f",
                time_since_last_press);
-        for (uint8_t i = 0; i < 10; i++) {
+        for (uint8_t i = 0; i < TAP_TEMPO_AVERAGES; i++) {
           bpms[i] = 0;
         }
-      } else {
+      } else if (last_press > 0) {
         double bpm = 60.0 / time_since_last_press;
         bpms[bpm_index] = bpm;
         bpm_index++;
-        if (bpm_index == 10) {
+        if (bpm_index >= TAP_TEMPO_AVERAGES) {
           bpm_index = 0;
         }
         // average all non-zero bpms
         double total_bpm = 0;
         double total_counter = 0;
-        for (uint8_t i = 0; i < 10; i++) {
+        for (uint8_t j = 0; j < TAP_TEMPO_AVERAGES; j++) {
+          int i = bpm_index - j;
+          if (i < 0) {
+            i += TAP_TEMPO_AVERAGES;
+          }
           if (bpms[i] > 0) {
-            total_bpm += bpms[i];
-            total_counter++;
+            total_bpm += bpms[i] * weights[j];
+            total_counter += weights[j];
           }
         }
         double bpm_average = total_bpm / total_counter;
